@@ -1,9 +1,12 @@
 from flask import Flask, jsonify, request
 import spacy
+from transformers import GPT2LMHeadModel, GPT2Tokenizer
 
 
 
-nlp = spacy.load("en_core_web_sm")
+model_name = "distilgpt2"
+model = GPT2LMHeadModel.from_pretrained(model_name)
+tokenizer = GPT2Tokenizer.from_pretrained(model_name)
 
 app = Flask(__name__)
 
@@ -17,18 +20,12 @@ def home():
 def chat():
     user_message = request.json.get("message")
 
-    # simple chatbot logic
-    if "resume" in user_message.lower():
-        response = "You can view my resume at [resume link]"
-    
-    if "background" in user_message.lower():
-        response = "I have a background in Data Science in Cmputational Linguistics."
+    #encode the input and generate a response
+    inputs = tokenizer.input(user_message, return_tensors="pt")
+    outputs = model.generate(inputs, max_length =150, do_sample=True, top_k=50 )
 
-    if "interests" in user_message.lower():
-        response = "I'm interested in Data Science and Computer-Human interaction."
-    
-    else:
-        response = "I'm still learning to respond to that. You can ask this directly from Sara by her email: Saramirjalili.78@gmail.com"
+    #decode the output and generate the response
+    response = tokenizer.decode(outputs[0], skip_special_tokens=True)
 
     return jsonify({"response": response})
 
